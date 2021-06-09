@@ -24,7 +24,6 @@ client.connect()
 router.post('/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-  console.log(password, username)
   if (req.session.userId){
     res.status(401).json({message: "already logged in"})
   } else if(!(username && password)){
@@ -35,7 +34,6 @@ router.post('/login', async (req, res) => {
       text: sql,
       values: [username]
     })).rows
-
 
     if(result.length === 0){
 
@@ -88,7 +86,7 @@ router.get('/me', async (req, res) => {
       if(req.session.TypeID === 0){
         result[0].role = "developpeur"
       }else{
-        esult[0].role = "rapporteur"
+        result[0].role = "rapporteur"
       }
       res.status(200).json(result[0]);
     } else {
@@ -98,6 +96,53 @@ router.get('/me', async (req, res) => {
     res.status(401).json({message: "no user logged in."});
   }
 })
+
+/**
+ * Cette route déconnecte l'utilisateur
+ */
+router.post('/disconnect', (req, res) => {
+  if (req.session.userId) {
+    req.session.destroy();
+    res.status(200).json({message: `user disconnected`});
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
+/**
+ * Cette route permet la creation d'un ticket
+ */
+router.post('/ticket',async (req, res) => {
+  if (req.session.TypeID === 1) {
+
+    const idclient = req.body.idclient;
+    const idprojet = req.body.idprojet;
+    const description = req.body.des;
+    const status = req.body.statu;
+    let date = Date.now();
+    if(idprojet== null || idclient == null || description == null || status == null ){
+      res.status(400).json({message: 'bad request - Missing properties'})
+    }
+
+    const sql = "INSERT INTO ticket (Id_reporteur, Id_cliient, Id_projet, Description, Statut, Date) VALUES ($1, $2, $3, $4, $5, $6)"
+    try {
+      await client.query({
+        text: sql,
+        values: [req.session.userId, idclient, idprojet, description, status, date]
+      });
+      res.status(200).json({message: "ok"})
+    } catch (e) {
+      console.log(e)
+      res.status(400).json({message: "bad request"});
+    }
+  } else if(req.session.TypeID === 0){
+    res.status(400).json({message: 'bad request - Dev cant create ticket.'})
+  }
+  else{
+    res.status(400).json({message: 'bad request - You must be login'})
+
+  }
+})
+
 
 
 module.exports = router
