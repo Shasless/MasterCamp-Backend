@@ -14,7 +14,7 @@ app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
-app.use(session({ secret: '111', saveUninitialized: false, resave: false }))
+app.use(session({ secret: "rsghqn5q41hbn3d1bn521 5b b 6d041vb d6vb4 16rv416v15e1", saveUninitialized: false, resave: false }))
 app.use(express.static(path.join(__dirname, '../client')))
 
 app.use('/api/', apiRouter)

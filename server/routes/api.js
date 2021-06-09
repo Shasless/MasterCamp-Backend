@@ -9,8 +9,8 @@ dotenv.config()
 const client = new Client({
   user: 'postgres',
   host: 'localhost',
-  password: 'a',
-  database: 'tpmastercamp',
+  password: process.env.PASSWORD,
+  database: process.env.DB,
 })
 
 client.connect()
@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', async (req, res) => {
   if(req.session.userId){
     let sql;
-    if(req.session.TypeID==0){
+    if(req.session.TypeID === 0){
        sql = "SELECT username, nom, prenom FROM developpeur WHERE id_developpeur=$1"
     }else{
        sql = "SELECT username, nom, prenom FROM rapporteur WHERE id_rapporteur=$1"
