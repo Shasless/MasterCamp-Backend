@@ -235,6 +235,8 @@ router.post('/asigndev',async (req, res) => {
     const idticket = req.body.idticket;
     if(idticket== null  ){
       res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+
     }
     const sql = "UPDATE ticket SET ID_developpeur =$1 WHERE id_ticket=$2 "
     try {
@@ -251,9 +253,93 @@ router.post('/asigndev',async (req, res) => {
   else{
     res.status(400).json({message: 'bad request - You must be login'})
   }
-
 })
 
+
+/**
+ * Cette route permet de recuperer les tickets sans dev asigné
+ */
+router.get('/ticketwithoutdev',async (req, res) => {
+  if (req.session.userId) {
+
+    const sql = "SELECT * FROM ticket  WHERE ID_developpeur IS NULL  ORDER BY id_ticket ASC"
+    const result = (await client.query({
+      text: sql,
+    })).rows
+
+    res.status(200).json(result);
+
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
+
+
+
+/**
+ * Cette route permet de recuperer les tickets avec un dev donné
+ */
+router.get('/ticketdev',async (req, res) => {
+  if (req.session.userId) {
+    const iddev = req.body.iddev;
+    if(iddev == null){
+      res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+    }
+    const sql = "SELECT * FROM ticket  WHERE ID_developpeur = $1  ORDER BY id_ticket ASC"
+    const result = (await client.query({
+      text: sql,
+      values: [iddev]
+    })).rows
+
+    res.status(200).json(result);
+
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
+
+/**
+ * Cette route permet de recuperer les tickets avec un rapporteur donné
+ */
+router.get('/ticketrappor',async (req, res) => {
+  if (req.session.userId) {
+    const idrappor = req.body.idrappor;
+    if(idrappor == null){
+      res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+    }
+    const sql = "SELECT * FROM ticket  WHERE ID_rapporteur = $1  ORDER BY id_ticket ASC"
+    const result = (await client.query({
+      text: sql,
+      values: [idrappor]
+    })).rows
+    res.status(200).json(result);
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
+
+/**
+ * Cette route permet de recuperer un ticket donné
+ */
+router.get('/ticketunique',async (req, res) => {
+  if (req.session.userId) {
+    const idticket = req.body.idticket;
+    if(idticket == null){
+      res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+    }
+    const sql = "SELECT * FROM ticket  WHERE id_ticket = $1  ORDER BY id_ticket ASC"
+    const result = (await client.query({
+      text: sql,
+      values: [idticket]
+    })).rows
+    res.status(200).json(result);
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
 
 module.exports = router
 
