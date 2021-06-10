@@ -121,13 +121,14 @@ router.post('/ticket',async (req, res) => {
     let date = Date.now();
     if(idprojet== null || idclient == null || description == null || status == null ){
       res.status(400).json({message: 'bad request - Missing properties'})
+      return;
     }
 
-    const sql = "INSERT INTO ticket (Id_reporteur, Id_cliient, Id_projet, Description, Statut, Date) VALUES ($1, $2, $3, $4, $5, $6)"
+    const sql = "INSERT INTO ticket (Id_rapporteur, Id_client, Id_projet, Description, Statut, Date) VALUES ($1, $2, $3, $4, $5, to_timestamp($6))"
     try {
       await client.query({
         text: sql,
-        values: [req.session.userId, idclient, idprojet, description, status, date]
+        values: [req.session.userId, idclient, idprojet, description, status, date/1000.0]
       });
       res.status(200).json({message: "ok"})
     } catch (e) {
@@ -143,6 +144,115 @@ router.post('/ticket',async (req, res) => {
   }
 })
 
+/**
+ * Cette route permet de recuperer les tickets
+ */
+router.get('/allticket',async (req, res) => {
+  if (req.session.userId) {
+
+
+    const sql = "SELECT * FROM ticket ORDER BY id_ticket ASC"
+    const result = (await client.query({
+      text: sql,
+    })).rows
+
+    res.status(200).json(result);
+
+  } else {
+    res.status(400).json({message: 'bad request - no user logged in.'})
+  }
+})
+
+/**
+ * Cette route permet de modifier  les tickets
+ */
+router.post('/ticketmodif',async (req, res) => {
+  if (req.session.TypeID === 0) {
+
+    const idticket = req.body.idticket;
+    const description = req.body.des;
+    const status = req.body.statu;
+    if(idticket== null || description == null|| status == null ){
+      res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+    }
+    const sql2 = "SELECT * FROM ticket WHERE ID_developpeur =$1 AND id_ticket=$2"
+    const result = (await client.query({
+      text: sql2,
+      values: [req.session.userId,idticket ]
+    })).rows
+    if(result){
+    const sql = "UPDATE ticket SET description = $1, statut = $2  WHERE id_ticket = $3 "
+    try {
+      await client.query({
+        text: sql,
+        values: [description,status ,idticket]
+      });
+      res.status(200).json({message: "ok"})
+    } catch (e) {
+      console.log(e)
+      res.status(400).json({message: "bad request"});
+    }}else{
+      res.status(400).json({message: 'bad request - Dev must have the property of the ticket'})
+
+    }
+
+  } else if(req.session.TypeID === 1){
+    res.status(400).json({message: 'bad request - reporteur cant update ticket.'})
+  }
+  else{
+    res.status(400).json({message: 'bad request - You must be login'})
+
+  }
+})
+
+
+/**
+ * Cette route permet d'assigner un dev au ticket
+ */
+router.post('/asigndev',async (req, res) => {
+  if (req.session.TypeID === 1) {
+    const iddev = req.body.iddev;
+    const idticket = req.body.idticket;
+    if (idticket == null || iddev == null) {
+      res.status(400).json({message: 'bad request - Missing properties'})
+      return;
+    }
+
+    const sql = "UPDATE ticket SET ID_developpeur =$1 WHERE id_ticket=$2"
+    try {
+      await client.query({
+        text: sql,
+        values: [iddev, idticket]
+      });
+      res.status(200).json({message: "ok"})
+    } catch (e) {
+      console.log(e)
+      res.status(400).json({message: "bad request"});
+    }
+
+  } else if(req.session.TypeID === 0){
+    const idticket = req.body.idticket;
+    if(idticket== null  ){
+      res.status(400).json({message: 'bad request - Missing properties'})
+    }
+    const sql = "UPDATE ticket SET ID_developpeur =$1 WHERE id_ticket=$2 "
+    try {
+      await client.query({
+        text: sql,
+        values: [req.session.userId, idticket]
+      });
+      res.status(200).json({message: "ok"})
+    } catch (e) {
+      console.log(e)
+      res.status(400).json({message: "bad request"});
+    }
+  }
+  else{
+    res.status(400).json({message: 'bad request - You must be login'})
+  }
+
+})
 
 
 module.exports = router
